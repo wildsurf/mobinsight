@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:location/location.dart';
+import 'package:mobinsight/geo_position.dart';
+
+import 'mqtt_service.dart';
 
 void main() => runApp(MyApp());
 
@@ -9,7 +12,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Flutter Demo',
+      title: 'MobInsight',
       theme: ThemeData(
         primarySwatch: Colors.amber,
       ),
@@ -21,15 +24,6 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
   final String title;
 
   @override
@@ -38,16 +32,28 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   LocationData _locationData;
+  MqttService _mqttService = new MqttService();
 
   @override
   void initState() {
     super.initState();
 
+    initMqtt();
+  }
+
+  void initMqtt() async {
+    await _mqttService.connectMqtt();
+
     listenToLocationChanges();
   }
 
   void setLocation(LocationData location) {
+    GeoPosition geoPosition = new GeoPosition(
+        latitude: location.latitude, longitude: location.longitude);
+
     this.setState(() => _locationData = location);
+
+    _mqttService.publish(geoPosition.toJson().toString());
   }
 
   void listenToLocationChanges() async {
